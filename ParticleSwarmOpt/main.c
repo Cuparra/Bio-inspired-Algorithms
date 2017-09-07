@@ -13,6 +13,7 @@
 
 Swarm *S;
 
+/* exemple of a function to be avaluated. */
 void EvaluateParticles(Swarm *S){
 
     int i,j;
