@@ -1,0 +1,53 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <math.h>
+
+#include "ContinuosBCO.h"
+
+#define E_SIZE      50
+#define O_SIZE      50
+#define D_SIZE      10
+
+Colony *C;
+
+double EvaluateFlower(Bee *B){
+
+    int i;
+    double fitness = 0;
+    double *X   = B->Flower;
+
+    for(i=0;i<D_SIZE;i++)
+        fitness += X[i]*X[i];
+
+    return 1.0/(fitness+1);
+}
+
+int TerminationCriteria(Colony *C){
+
+    int i;
+    static int session = 0;
+
+    printf("%d %lf\n",session, C->BestBee->Fitness);
+
+    if( ++session < 500)
+        return 1;
+
+    for(i=0;i<D_SIZE;i++)
+        printf("%lf ", C->BestBee->Flower[i]);
+
+    return 0;
+
+}
+
+int main(){
+
+    time_t t;
+    srand((unsigned) time(&t));
+
+    C = CreateColony(E_SIZE,O_SIZE,D_SIZE,1048576,-1048576);
+
+    ContinuousBeeColonyOpt(C,EvaluateFlower,TerminationCriteria);
+
+    return 0;
+}

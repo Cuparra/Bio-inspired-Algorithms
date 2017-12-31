@@ -1,0 +1,204 @@
+#include <stdlib.h>
+#include <time.h>
+#include <string.h>
+
+#include "DiscreteBCO.h"
+
+#define STATES          9
+
+#define E_SIZE          50
+#define O_SIZE          100
+
+#define ACTIONS         3
+
+#define SQUAREX         11
+#define SQUAREY         19
+#define NUM_ACTION      100
+#define NUM_SESION      10000
+
+#define EMPT            0
+#define WALL            1
+
+#define NUMAX           9
+#define NUMIN           0
+
+#define TAKE            0
+#define MOVEF           1
+#define TURNL           2
+#define TURNR           3
+
+#define RIGHT           0
+#define LEFT            1
+#define DOWN            3
+#define UP              4
+
+/*
+    The robot has 3 actions: move forward, turn to right or left.
+
+    Cromossomo, pra cada estado: (output 0, next state 0) (output 1, next state 1)... (output n, next state n)
+
+    O número de tuplas é igual ao número de inputs deferentes.
+
+    O robô começa na posição x = y = 1, olhando pra direita.
+*/
+
+int map[SQUAREX][SQUAREY];
+int BeeMap[E_SIZE+O_SIZE][SQUAREX][SQUAREY];
+int dimension;
+int SizeOfPopulation = E_SIZE+O_SIZE;
+Colony *C;
+
+void GenerateMap(){
+
+    int i,j;
+
+}
+
+void GenerateMaps(){
+
+    int i,k,j;
+
+    for(k=0;k<SizeOfPopulation;k++){
+        for(i=0;i<SQUARE;i++){
+            for(j=0;j<SQUARE;j++)
+                BeeMap[k][i][j] = map[i][j];
+        }
+    }
+
+}
+
+inline int Calibrate(int z){
+
+    z = (z < 0) ? SQUARE - 1 : z;
+    z = (z > SQUARE - 1) ? 0 : z;
+
+    return z;
+}
+
+double EvaluateFlower(Bee *B){
+
+    static int k = 0;
+
+    int eaten = 0;
+    int count = 0;
+    double fitness = 0;
+    int *S = B->Flower;
+
+    int turnX, turnY, eye = RIGHT;
+    int x = 5 ,  y = 5;
+
+    int state = 0;
+
+    while( count++ < NUM_ACTION ){
+
+        if ( eye == UP ){
+            turnX = -1;
+            turnY = 0;
+        }else if( eye == DOWN ){
+            turnX = 1;
+            turnY = 0;
+        }else if( eye == LEFT){
+            turnX = 0;
+            turnY = -1;
+        }else if( eye == RIGHT){
+            turnX = 0;
+            turnY = 1;
+        }
+
+        int temp_x = Calibrate(x+turnX);
+        int temp_y = Calibrate(y+turnY);
+
+        int input = BeeMap[k][temp_x][temp_y];
+
+        int action      = S[state+2*input] % ACTIONS;
+        int nextState   = S[state+2*input+1];
+
+        if( action == TAKE ){
+            if( BeeMap[k][temp_x][temp_y] == FOOD ){
+                if( ++eaten == NUMFOOD)
+                    break;
+            }
+            BeeMap[k][temp_x][temp_y] = 0;
+        }
+        else if (action == MOVEF){
+
+            if ( eye == RIGHT )
+                y = Calibrate(y+1);
+            else if ( eye == LEFT )
+                y = Calibrate(y-1);
+            else if ( eye == DOWN)
+                x = Calibrate(x+1);
+            else
+                x = Calibrate(x-1);
+
+        }else if( action == TURNR){
+
+            if ( eye == RIGHT)
+                eye = DOWN;
+            else if ( eye == LEFT)
+                eye = UP;
+            else if (eye == UP)
+                eye = RIGHT;
+            else
+                eye = LEFT;
+
+        }else{
+
+            if ( eye == RIGHT )
+                eye = UP;
+            else if ( eye == LEFT )
+                eye = DOWN;
+            else if ( eye == UP )
+                eye = LEFT;
+            else
+                eye = RIGHT;
+        }
+
+        state = nextState;
+    }
+
+    if ( ++k < SizeOfPopulation)
+        k = 0;
+
+    if (eaten == NUMFOOD)
+        fitness = (double) NUM_ACTION/count;
+    else
+        fitness = (double) NUM_ACTION/(NUM_ACTION + NUMFOOD - eaten);
+
+    return fitness;
+
+}
+
+int TerminationCriteria(Colony *C){
+
+    static int session = 0;
+    double fitness = C->BestBee->Fitness;
+    GenerateMaps();
+
+    printf("%d %lf %.1lf\n",session, fitness, (fitness*(NUM_ACTION+NUMFOOD) - NUM_ACTION)/fitness );
+
+    if( ++session < NUM_SESION )
+        return 1;
+
+    return 0;
+}
+
+int main(){
+
+    time_t t;
+    srand((unsigned) time(&t));
+
+    GenerateMap();
+
+    dimension = 4*STATES;
+
+    C = CreateColony(E_SIZE,O_SIZE,dimension,NUMAX,NUMIN);
+    DiscreteBeeColonyOpt(C,EvaluateFlower,TerminationCriteria);
+
+    int i;
+    int *F = C->BestBee->Flower;
+    for(i=0;i<dimension;i+=ACTIONS)
+        printf("%d %d %d %d\n",F[i]%ACTIONS,F[i+1],F[i+2]%ACTIONS,F[i+3]);
+
+    return 0;
+}
