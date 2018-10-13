@@ -1,6 +1,6 @@
 # Bio-inspired-Algorithms
 
-I developed these algorithms for my sole purpose only during graduation, so there is no intention be made by the Github community.
+I developed these algorithms for my sole purpose only, during graduation, so there was no intention be made for the Github community at that time.
 
 - Particle Swarm Optmization (PSO).
 - Continuous Bee Colony Optimization.
